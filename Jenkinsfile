@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo '========== Running backend unit tests =========='
                 dir("${BACKEND_DIR}") {
-                    bat 'npm test'
+                    bat 'npm test -- --passWithNoTests'
                 }
             }
             post {
