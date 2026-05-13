@@ -22,7 +22,7 @@ pipeline {
             steps {
                 echo '========== Installing backend dependencies =========='
                 dir("${BACKEND_DIR}") {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -31,7 +31,7 @@ pipeline {
             steps {
                 echo '========== Installing frontend dependencies =========='
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 echo '========== Building backend =========='
                 dir("${BACKEND_DIR}") {
-                    sh 'echo "Backend is Node.js Express app - no build step needed"'
+                    bat 'echo Backend is Node.js Express app - no build step needed'
                 }
             }
         }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 echo '========== Building frontend React app =========='
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm run build'
+                    bat 'npm run build'
                 }
             }
         }
@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo '========== Running backend unit tests =========='
                 dir("${BACKEND_DIR}") {
-                    sh 'npm test'
+                    bat 'npm test'
                 }
             }
             post {
@@ -73,7 +73,7 @@ pipeline {
             steps {
                 echo '========== Running frontend unit tests =========='
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm test -- --passWithNoTests --ci --coverage'
+                    bat 'npm test -- --passWithNoTests --ci --coverage'
                 }
             }
             post {
@@ -93,28 +93,28 @@ pipeline {
                 script {
                     // Build and push backend image
                     dir("${BACKEND_DIR}") {
-                        sh '''
-                            echo "Building backend Docker image..."
-                            docker build -t ${DOCKER_USERNAME}/todo-backend:latest .
+                        bat '''
+                            echo Building backend Docker image...
+                            docker build -t %DOCKER_USERNAME%/todo-backend:latest .
                         '''
                     }
                     
                     // Build and push frontend image
                     dir("${FRONTEND_DIR}") {
-                        sh '''
-                            echo "Building frontend Docker image..."
-                            docker build -t ${DOCKER_USERNAME}/todo-frontend:latest .
+                        bat '''
+                            echo Building frontend Docker image...
+                            docker build -t %DOCKER_USERNAME%/todo-frontend:latest .
                         '''
                     }
                     
                     // Push images to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh '''
-                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                            docker push ${DOCKER_USERNAME}/todo-backend:latest
-                            docker push ${DOCKER_USERNAME}/todo-frontend:latest
+                        bat '''
+                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                            docker push %DOCKER_USERNAME%/todo-backend:latest
+                            docker push %DOCKER_USERNAME%/todo-frontend:latest
                             docker logout
-                            echo "✅ Docker images pushed successfully!"
+                            echo Docker images pushed successfully!
                         '''
                     }
                 }
