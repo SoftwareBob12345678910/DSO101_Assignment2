@@ -88,21 +88,15 @@ pipeline {
             steps {
                 echo '========== Building and pushing Docker images =========='
                 script {
-                    // Build backend Docker image
-                    bat '''
-                        echo ===== Building backend Docker image =====
-                        docker build -f backend/Dockerfile -t %DOCKER_USERNAME%/todo-backend:latest .
-                    '''
-                    
-                    // Build frontend Docker image
-                    bat '''
-                        echo ===== Building frontend Docker image =====
-                        docker build -f frontend/Dockerfile -t %DOCKER_USERNAME%/todo-frontend:latest .
-                    '''
-                    
-                    // Push images to Docker Hub
+                    // Push images to Docker Hub with credentials
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         bat '''
+                            echo ===== Building backend Docker image =====
+                            docker build -f backend/Dockerfile -t %DOCKER_USERNAME%/todo-backend:latest .
+                            
+                            echo ===== Building frontend Docker image =====
+                            docker build -f frontend/Dockerfile -t %DOCKER_USERNAME%/todo-frontend:latest .
+                            
                             echo ===== Logging into Docker Hub =====
                             REM For Windows, we use a temporary file to avoid pipe issues
                             (echo %DOCKER_PASSWORD%) | docker login -u %DOCKER_USERNAME% --password-stdin
