@@ -3,16 +3,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files first (for layer caching)
+# Copy package files
 COPY backend/package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
-# Copy all source files from backend directory
+# Copy all backend source files
 COPY backend/ .
 
-# Expose the port from environment (default 5000)
+# Expose the port
 EXPOSE 5000
 
 # Start the server

@@ -88,33 +88,32 @@ pipeline {
             steps {
                 echo '========== Building and pushing Docker images =========='
                 script {
-                    // Build and push backend image
-                    dir("${BACKEND_DIR}") {
-                        bat '''
-                            echo Building backend Docker image...
-                            docker build -t %DOCKER_USERNAME%/todo-backend:latest .
-                        '''
-                    }
+                    // Build backend Docker image
+                    bat '''
+                        echo ===== Building backend Docker image =====
+                        docker build -f backend/Dockerfile -t %DOCKER_USERNAME%/todo-backend:latest .
+                    '''
                     
-                    // Build and push frontend image
-                    dir("${FRONTEND_DIR}") {
-                        bat '''
-                            echo Building frontend Docker image...
-                            docker build -t %DOCKER_USERNAME%/todo-frontend:latest .
-                        '''
-                    }
+                    // Build frontend Docker image
+                    bat '''
+                        echo ===== Building frontend Docker image =====
+                        docker build -f frontend/Dockerfile -t %DOCKER_USERNAME%/todo-frontend:latest .
+                    '''
                     
                     // Push images to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         bat '''
-                            REM Create a temporary file with Docker credentials
-                            (echo %DOCKER_PASSWORD%) | docker login -u %DOCKER_USERNAME% --password-stdin registry.hub.docker.com
-                            if errorlevel 1 (
-                                echo Failed to login to Docker Hub
-                                exit /b 1
-                            )
+                            echo ===== Logging into Docker Hub =====
+                            REM For Windows, we use a temporary file to avoid pipe issues
+                            (echo %DOCKER_PASSWORD%) | docker login -u %DOCKER_USERNAME% --password-stdin
+                            
+                            echo ===== Pushing backend image =====
                             docker push %DOCKER_USERNAME%/todo-backend:latest
+                            
+                            echo ===== Pushing frontend image =====
                             docker push %DOCKER_USERNAME%/todo-frontend:latest
+                            
+                            echo ===== Logging out of Docker Hub =====
                             docker logout
                             echo ===== Docker images pushed successfully! =====
                         '''
