@@ -85,9 +85,6 @@ pipeline {
         }
         
         stage('Deploy - Push to Docker Hub') {
-            when {
-                branch 'main'
-            }
             steps {
                 echo '========== Building and pushing Docker images =========='
                 script {
@@ -110,11 +107,16 @@ pipeline {
                     // Push images to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         bat '''
-                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                            REM Create a temporary file with Docker credentials
+                            (echo %DOCKER_PASSWORD%) | docker login -u %DOCKER_USERNAME% --password-stdin registry.hub.docker.com
+                            if errorlevel 1 (
+                                echo Failed to login to Docker Hub
+                                exit /b 1
+                            )
                             docker push %DOCKER_USERNAME%/todo-backend:latest
                             docker push %DOCKER_USERNAME%/todo-frontend:latest
                             docker logout
-                            echo Docker images pushed successfully!
+                            echo ===== Docker images pushed successfully! =====
                         '''
                     }
                 }
