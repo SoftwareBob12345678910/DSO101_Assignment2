@@ -88,7 +88,6 @@ pipeline {
             steps {
                 echo '========== Building and pushing Docker images =========='
                 script {
-                    // Push images to Docker Hub with credentials
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         bat '''
                             echo ===== Building backend Docker image =====
@@ -96,20 +95,40 @@ pipeline {
                             
                             echo ===== Building frontend Docker image =====
                             docker build -f frontend/Dockerfile -t %DOCKER_USERNAME%/todo-frontend:latest .
+                        '''
+                        
+                        // Use PowerShell for Docker login and push (handles piping better on Windows)
+                        powershell '''
+                            Write-Host "===== Logging into Docker Hub ====="
+                            Write-Host "Username: $env:DOCKER_USERNAME"
                             
-                            echo ===== Logging into Docker Hub =====
-                            REM For Windows, we use a temporary file to avoid pipe issues
-                            (echo %DOCKER_PASSWORD%) | docker login -u %DOCKER_USERNAME% --password-stdin
+                            # Pipe password to docker login
+                            $env:DOCKER_PASSWORD | docker login -u $env:DOCKER_USERNAME --password-stdin
                             
-                            echo ===== Pushing backend image =====
-                            docker push %DOCKER_USERNAME%/todo-backend:latest
+                            if ($LASTEXITCODE -ne 0) {
+                                Write-Host "Docker login failed with exit code: $LASTEXITCODE"
+                                exit 1
+                            }
                             
-                            echo ===== Pushing frontend image =====
-                            docker push %DOCKER_USERNAME%/todo-frontend:latest
+                            Write-Host "===== Pushing backend image ====="
+                            docker push "$($env:DOCKER_USERNAME)/todo-backend:latest"
                             
-                            echo ===== Logging out of Docker Hub =====
+                            if ($LASTEXITCODE -ne 0) {
+                                Write-Host "Failed to push backend image"
+                                exit 1
+                            }
+                            
+                            Write-Host "===== Pushing frontend image ====="
+                            docker push "$($env:DOCKER_USERNAME)/todo-frontend:latest"
+                            
+                            if ($LASTEXITCODE -ne 0) {
+                                Write-Host "Failed to push frontend image"
+                                exit 1
+                            }
+                            
+                            Write-Host "===== Logging out of Docker Hub ====="
                             docker logout
-                            echo ===== Docker images pushed successfully! =====
+                            Write-Host "===== Docker images pushed successfully! ====="
                         '''
                     }
                 }
